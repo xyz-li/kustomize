@@ -4,6 +4,7 @@
 package yaml
 
 import (
+	"bytes"
 	"io"
 
 	"gopkg.in/yaml.v3"
@@ -22,8 +23,12 @@ type TypeError = yaml.TypeError
 type Unmarshaler = yaml.Unmarshaler
 
 var Marshal = yaml.Marshal
-var Unmarshal = yaml.Unmarshal
-var NewDecoder = yaml.NewDecoder
+var Unmarshal = func(in []byte, out interface{}) (err error) {
+	decoder := yaml.NewDecoder(bytes.NewBuffer(in))
+	decoder.UniqueKeys(false)
+	err = decoder.Decode(out)
+	return err
+}
 var NewEncoder = func(w io.Writer) *yaml.Encoder {
 	e := yaml.NewEncoder(w)
 	e.SetIndent(2)
