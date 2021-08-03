@@ -83,7 +83,15 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: dist/kustomize*.tar.gz
           asset_name: kustomize
-          tag: ${{ github.ref }}
+          tag: kustomize/v4.2.0
           overwrite: true
           file_glob: true
+          body: "Disable unique keys"
+      - name: Upload checksums.txt
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/checksums.txt
+          tag: kustomize/v4.2.0
+          overwrite: true
           body: "Disable unique keys"
