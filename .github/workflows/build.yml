@@ -1,0 +1,89 @@
+name: Build
+on:
+  push:
+    branches: [ kustomize/v4.2.0 ]
+  pull_request:
+    branches: [ kustomize/v4.2.0 ]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+
+      - name: Generate gorelease.yml
+        run: |
+          touch .goreleaser.yml
+          module=kustomize
+          semiver=v4.2.0
+          owner=$(echo "${GITHUB_REPOSITORY}" | awk -F/ '{printf $1}')
+          cat <<EOF >.goreleaser.yml
+          project_name: $module
+
+          archives:
+          - name_template: "${module}_${semiver}_{{ .Os }}_{{ .Arch }}"
+
+          builds:
+          - skip: $skipBuild
+
+            ldflags: >
+              -s
+              -X sigs.k8s.io/kustomize/api/provenance.version={{.Version}}
+              -X sigs.k8s.io/kustomize/api/provenance.gitCommit={{.Commit}}
+              -X sigs.k8s.io/kustomize/api/provenance.buildDate={{.Date}}
+
+            goos:
+            - linux
+            - darwin
+
+            goarch:
+            - amd64
+            - arm64
+
+            dir: ./kustomize
+
+          checksum:
+            name_template: 'checksums.txt'
+
+          env:
+          - CGO_ENABLED=0
+          - GO111MODULE=on
+
+          release:
+            github:
+              owner: ${owner}
+              name: kustomize
+            draft: true
+          EOF
+          cat .goreleaser.yml
+
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          # either 'goreleaser' (default) or 'goreleaser-pro'
+          distribution: goreleaser
+          version: latest
+          args: release -f .goreleaser.yml --rm-dist  --skip-validate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload assets
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/kustomize*.tar.gz
+          asset_name: kustomize
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
+          body: "Disable unique keys"
