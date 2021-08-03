@@ -1,9 +1,9 @@
 name: Build
 on:
   push:
-    branches: [ kustomize/v4.2.0 ]
+    branches: [ release-kustomize-v4.2 ]
   pull_request:
-    branches: [ kustomize/v4.2.0 ]
+    branches: [ release-kustomize-v4.2 ]
 
 jobs:
   build:
